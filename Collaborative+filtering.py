@@ -3,6 +3,7 @@
 
 # In[1]:
 
+from __future__ import division
 import pandas as pd
 from pandas import ExcelWriter
 from pandas import ExcelFile
@@ -12,12 +13,13 @@ from sklearn.cluster import KMeans
 from sklearn.cluster import SpectralClustering
 from sklearn.cluster import AgglomerativeClustering
 import math
-from __future__ import division
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d.axes3d as p3
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 
-# In[20]:
+# In[2]:
 
 df = pd.read_csv('formatted_data_updated.csv')
 
@@ -68,7 +70,7 @@ def makeArrays(dataframe):
 #     #returns a numpy array
 #     return np.array(array)
 
-# In[7]:
+# In[5]:
 
 #compute the averages of the row
 def averages(row):
@@ -85,7 +87,7 @@ def averages(row):
     return (avg/counter)
 
 
-# In[9]:
+# In[6]:
 
 #initlize list of lists for spectral
 training_data = []
@@ -118,14 +120,14 @@ training_data = np.array(training_data)
 # from sklearn.decomposition import PCA
 # reduced_data = PCA(n_components=2).fit_transform(training_data)
 
-# In[11]:
+# In[7]:
 
 #training_data = averages(makeArrays(training_set.T))
 #print training_set.shape
 kmeans = KMeans(n_clusters=4, random_state=0).fit(training_data)
 
 
-# In[28]:
+# In[8]:
 
 labels_kmeans = kmeans.labels_
 set_lk = set(labels_kmeans)
@@ -144,7 +146,7 @@ plt.show()
 
 # # Spectral clustering
 
-# In[29]:
+# In[9]:
 
 spectral = SpectralClustering()
 spectral.fit(training_data)
@@ -154,26 +156,26 @@ print spectral.labels_
 
 # # Hierarchial/Agglomerative Clustering
 
-# In[30]:
+# In[10]:
 
 # Define the structure A of the data. Here a 10 nearest neighbors
 from sklearn.neighbors import kneighbors_graph
 connectivity = kneighbors_graph(training_data, n_neighbors=10, include_self=False)
 
 
-# In[31]:
+# In[11]:
 
 ward = AgglomerativeClustering(n_clusters=8, connectivity=connectivity,
                                linkage='ward').fit(training_data)
 
 
-# In[32]:
+# In[12]:
 
 label = ward.labels_
 print label
 
 
-# In[33]:
+# In[13]:
 
 # Plot result
 fig = plt.figure()
@@ -187,7 +189,7 @@ for l in np.unique(label):
 plt.show()
 
 
-# In[44]:
+# In[14]:
 
 #testing
 labels_dict = {}
@@ -207,7 +209,7 @@ print labels_dict
     
 
 
-# In[127]:
+# In[15]:
 
 colNames =  list(newdf.columns.values)
 #print colNames
@@ -236,13 +238,12 @@ def findEle(index):
 
 # TF-IDF
 
-# In[151]:
+# In[16]:
 
 #compute tf-idf for the given array
 #in Scikit-Learn
-from sklearn.feature_extraction.text import TfidfVectorizer
 def tfIDF(array):
-    sklearn_tfidf = TfidfVectorizer(stop_words = 'english')
+    sklearn_tfidf = TfidfVectorizer()#(stop_words = 'english')
     vec_representation = sklearn_tfidf.fit_transform(array)
     print vec_representation
     return vec_representation
@@ -250,23 +251,27 @@ def tfIDF(array):
 
 # Cosine similarity
 
-# In[152]:
+# In[17]:
 
 #compute cosine similarity value for the given 
-from sklearn.metrics.pairwise import cosine_similarity
 def cosine_sim(tf_idf_matrix):
     cosine_similarity()
     
 
 
-# In[153]:
+# In[21]:
 
 #users = []
 for key in labels_dict:
     for vals in labels_dict[key]:
         likes, dislikes  = findEle(vals)
         #print "key is ", key
-        tfIDF(likes)
+        for like in likes:
+            if not len(likes) == 0:
+                tfIDF(likes)
+                #print likes
+        #print likes
+        
         
         #print likes
         #print dislikes
