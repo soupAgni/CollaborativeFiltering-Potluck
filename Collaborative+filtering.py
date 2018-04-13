@@ -259,16 +259,72 @@ def cosine_sim(tf_idf_matrix):
     
 
 
-# In[21]:
+# In[41]:
 
-#users = []
+userdata = {}
+for i in range(0, len(set_lk)):
+    userdata[i] = {}
+    for j in range(0, len(label)):
+        userdata[i][j] = {}
+        for k in range(0, len(label)):
+            userdata[i][j][k] = ([],[])
+    
+
+
+#1-------
+#         for like in likes:
+#             eachuserlike = []
+#             if not len(likes) == 0:
+#                 eachuserlike = like
+#             userdata.append(eachuserlike)
+
+
+#for each cluster
+    #for each user in the cluster
+        #get the liked recipes
+        #get the disliked recipes
+        #for each user not /= original 
+            #get the liked recipes
+            #get the disliked recipes
+            #compare the recipes
+            
+
+#for each cluster
+
 for key in labels_dict:
-    for vals in labels_dict[key]:
-        likes, dislikes  = findEle(vals)
-        #print "key is ", key
-        for like in likes:
-            if not len(likes) == 0:
-                tfIDF(likes)
+    print "Key: ", key
+    #for each user in the cluster
+    for user1 in labels_dict[key]:
+        likes1, dislikes1  = findEle(user1)
+        print "User1: ", user1
+        #-----------1
+        #go through every other user
+        for user2 in labels_dict[user1]:
+            print "User2", user2
+            #get the likes and dislikes
+            likes2, dislikes2 = findEle(user2)
+            #comparison of recipes
+            #for each recipe in first user's 
+            for like1 in tfIDF(likes1):
+                print "like1: ", like1
+                #for each recipe in second user's
+                for like2 in tfIDF(likes2):
+                    print "like2: ", like2
+                    #get the liked similarity and place in array
+                    
+#                     #if there is no stored list
+#                     if userdata[key][user1][user2] == None:
+#                         #initilize a tuple of lists for (likes, dislikes)
+#                         userdata[key][user1][user2] = ([],[])
+                    #cluster -> user1 -> user2 -> tuple of likes/dislikes -> liked comparison
+                    userdata[key][user1][user2][0].append(cosine_similarity(like1, like2)) #likes
+                   # userdata[key][user1][user2][1].append(cosine_similarity(dislike1, dislike2)) #dislikes
+    
+        
+            
+print userdata
+                #tfIDF(likes)
+                
                 #print likes
         #print likes
         
