@@ -259,83 +259,122 @@ def cosine_sim(tf_idf_matrix):
     
 
 
-# In[41]:
+# In[44]:
 
-userdata = {}
-for i in range(0, len(set_lk)):
-    userdata[i] = {}
-    for j in range(0, len(label)):
-        userdata[i][j] = {}
-        for k in range(0, len(label)):
-            userdata[i][j][k] = ([],[])
-    
-
-
-#1-------
-#         for like in likes:
-#             eachuserlike = []
-#             if not len(likes) == 0:
-#                 eachuserlike = like
-#             userdata.append(eachuserlike)
+def cosine_computations():
+    userdata = {}
+    for i in range(0, len(set_lk)):
+        userdata[i] = {}
+        for j in range(0, len(label)):
+            userdata[i][j] = {}
+            for k in range(0, len(label)):
+                userdata[i][j][k] = ([],[])
 
 
-#for each cluster
-    #for each user in the cluster
-        #get the liked recipes
-        #get the disliked recipes
-        #for each user not /= original 
+
+    #1-------
+    #         for like in likes:
+    #             eachuserlike = []
+    #             if not len(likes) == 0:
+    #                 eachuserlike = like
+    #             userdata.append(eachuserlike)
+
+
+    #for each cluster
+        #for each user in the cluster
             #get the liked recipes
             #get the disliked recipes
-            #compare the recipes
-            
+            #for each user not /= original 
+                #get the liked recipes
+                #get the disliked recipes
+                #compare the recipes
 
-#for each cluster
 
-for key in labels_dict:
-    print "Key: ", key
-    #for each user in the cluster
-    for user1 in labels_dict[key]:
-        likes1, dislikes1  = findEle(user1)
-        print "User1: ", user1
-        #-----------1
-        #go through every other user
-        for user2 in labels_dict[user1]:
-            print "User2", user2
-            #get the likes and dislikes
-            likes2, dislikes2 = findEle(user2)
-            #comparison of recipes
-            #for each recipe in first user's 
-            for like1 in tfIDF(likes1):
-                print "like1: ", like1
-                #for each recipe in second user's
-                for like2 in tfIDF(likes2):
-                    print "like2: ", like2
-                    #get the liked similarity and place in array
-                    
-#                     #if there is no stored list
-#                     if userdata[key][user1][user2] == None:
-#                         #initilize a tuple of lists for (likes, dislikes)
-#                         userdata[key][user1][user2] = ([],[])
-                    #cluster -> user1 -> user2 -> tuple of likes/dislikes -> liked comparison
-                    userdata[key][user1][user2][0].append(cosine_similarity(like1, like2)) #likes
-                   # userdata[key][user1][user2][1].append(cosine_similarity(dislike1, dislike2)) #dislikes
-    
+    #for each cluster
+
+    for key in labels_dict:
+        print "Key: ", key
+        #for each user in the cluster
+        for user1 in labels_dict[key]:
+            likes1, dislikes1  = findEle(user1)
+            print "User1: ", user1
+            #-----------1
+            #go through every other user
+            if not len(likes1) == 0 and not len(dislikes1) == 0:
+                for user2 in labels_dict[key]:
+                    print "User2", user2
+                    #get the likes and dislikes
+                    likes2, dislikes2 = findEle(user2)
+
+                    if not len(likes2) == 0 and not len(dislikes2) == 0:
+                        #comparison of recipes
+                        #for each recipe in first user's 
+                        for like1 in tfIDF(likes1 + likes2)[0:len(likes1)]:
+                            #for each recipe in second user's
+                            for like2 in tfIDF(likes2 + likes1)[0:len(likes2)]:
+                                #get the liked similarity and place in array
+                                #cluster -> user1 -> user2 -> tuple of likes/dislikes -> liked comparison
+                                userdata[key][user1][user2][0].append(cosine_similarity(like1, like2)) #likes
+
+
+                        for dislike1 in tfIDF(dislikes1 + dislikes2)[0:len(dislikes1)]:
+                            #for each recipe in second user's
+                            for dislike2 in tfIDF(dislikes2 + dislikes1)[0:len(dislikes2)]:
+                                #get the liked similarity and place in array
+                                #cluster -> user1 -> user2 -> tuple of likes/dislikes -> disliked comparison
+                                userdata[key][user1][user2][1].append(cosine_similarity(dislike1, dislike2)) #likes
+
+
+
+                    #tfIDF(likes)
+
+                    #print likes
+            #print likes
+
+
+            #print likes
+            #print dislikes
+
+
+# In[55]:
+
+def average_list_nan(data):
+    average = float(0)
+    counter = float(1)
+    for el in data:
+        if not np.isnan(float(el)):
+            average += float(el)
+            counter += 1
+    return average/counter
+
+
+# In[58]:
+
+def average_cluster(userdata):
+    averages = [() for _ in range(len(userdata))]
+    for cluster in userdata:
+        averagelikes = float(0)
+        averagedislikes = float(0)
+        counter = float(1)
         
-            
-print userdata
-                #tfIDF(likes)
-                
-                #print likes
-        #print likes
-        
-        
-        #print likes
-        #print dislikes
+        for user1 in userdata[cluster]:
+            for user2 in userdata[cluster]:
+                averagelikes += average_list_nan(userdata[cluster][user1][user2][0])
+                averagedislikes += average_list_nan(userdata[cluster][user1][user2][1])
+                counter += 1
+        averages.append((averagelikes/counter, averagedislikes/counter))
+        return averages
 
 
 # In[ ]:
 
 
+
+
+# In[59]:
+
+# print userdata
+print average_cluster(userdata)
 
 
 # In[ ]:
