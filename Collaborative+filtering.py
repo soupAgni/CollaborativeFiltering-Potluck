@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[14]:
 
 from __future__ import division
 import pandas as pd
@@ -19,7 +19,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-# In[2]:
+# In[15]:
 
 df = pd.read_csv('formatted_data_updated.csv')
 
@@ -29,7 +29,7 @@ newdf = df.drop('UserID', axis = 1)
 newdf
 
 
-# In[3]:
+# In[16]:
 
 training_set = newdf[0:31]
 
@@ -38,7 +38,7 @@ test_set = newdf[31:37]
 
 # Adding all of the ratings corresponding to each recipe in a list of lists to make computation easier.
 
-# In[4]:
+# In[17]:
 
 def makeArrays(dataframe): 
     recipeRatings = []
@@ -70,7 +70,7 @@ def makeArrays(dataframe):
 #     #returns a numpy array
 #     return np.array(array)
 
-# In[5]:
+# In[18]:
 
 #compute the averages of the row
 def averages(row):
@@ -87,7 +87,7 @@ def averages(row):
     return (avg/counter)
 
 
-# In[6]:
+# In[19]:
 
 #initlize list of lists for spectral
 training_data = []
@@ -120,14 +120,14 @@ training_data = np.array(training_data)
 # from sklearn.decomposition import PCA
 # reduced_data = PCA(n_components=2).fit_transform(training_data)
 
-# In[7]:
+# In[20]:
 
 #training_data = averages(makeArrays(training_set.T))
 #print training_set.shape
 kmeans = KMeans(n_clusters=4, random_state=0).fit(training_data)
 
 
-# In[8]:
+# In[21]:
 
 labels_kmeans = kmeans.labels_
 set_lk = set(labels_kmeans)
@@ -146,70 +146,74 @@ plt.show()
 
 # # Spectral clustering
 
-# In[9]:
+# In[22]:
 
 spectral = SpectralClustering()
 spectral.fit(training_data)
 print "lables from clustering"
-print spectral.labels_
+spectral_labels =  spectral.labels_
+set_ls = set(spectral_labels)
 
 
 # # Hierarchial/Agglomerative Clustering
 
-# In[10]:
+# In[23]:
 
 # Define the structure A of the data. Here a 10 nearest neighbors
 from sklearn.neighbors import kneighbors_graph
 connectivity = kneighbors_graph(training_data, n_neighbors=10, include_self=False)
 
 
-# In[11]:
+# In[24]:
 
 ward = AgglomerativeClustering(n_clusters=8, connectivity=connectivity,
                                linkage='ward').fit(training_data)
 
 
-# In[12]:
+# In[27]:
 
-label = ward.labels_
-print label
+h_labels = ward.labels_
+print h_labels
+set_lh = set(h_labels)
 
 
-# In[13]:
+# In[30]:
 
 # Plot result
 fig = plt.figure()
 ax = p3.Axes3D(fig)
 ax.view_init(7, -80)
-for l in np.unique(label):
-    ax.scatter(training_data[label == l, 0], training_data[label == l, 1], training_data[label == l, 2],
-               color=plt.cm.jet(float(l) / np.max(label + 1)),
+for l in np.unique(h_labels):
+    ax.scatter(training_data[h_labels == l, 0], training_data[h_labels == l, 1], training_data[h_labels == l, 2],
+               color=plt.cm.jet(float(l) / np.max(h_labels + 1)),
                s=20, edgecolor='k')
 
 plt.show()
 
 
-# In[14]:
+# In[31]:
 
 #testing
-labels_dict = {}
-ind = 0
+#
+def getLabelsDict(set_labels, label_vals):
+    labels_dict = {}
+    ind = 0
 
-for i in range(0, len(set_lk)):
-    labels_dict[i] = []
-#print len(set_lk)
-#print labels_dict
-for i in labels_kmeans:
-    #if i not in labels_dict.values:
-    #print i
-    labels_dict[i].append(ind)
-    ind = ind + 1
-   
-print labels_dict
+    for i in range(0, len(set_labels)):
+        labels_dict[i] = []
+    #print len(set_lk)
+    #print labels_dict
+    for i in label_vals:
+        #if i not in labels_dict.values:
+        #print i
+        labels_dict[i].append(ind)
+        ind = ind + 1
+
+    return labels_dict
     
 
 
-# In[15]:
+# In[32]:
 
 colNames =  list(newdf.columns.values)
 #print colNames
@@ -238,30 +242,22 @@ def findEle(index):
 
 # TF-IDF
 
-# In[16]:
+# In[33]:
 
 #compute tf-idf for the given array
 #in Scikit-Learn
 def tfIDF(array):
     sklearn_tfidf = TfidfVectorizer()#(stop_words = 'english')
     vec_representation = sklearn_tfidf.fit_transform(array)
-    print vec_representation
+    #print vec_representation
     return vec_representation
 
 
 # Cosine similarity
 
-# In[17]:
+# In[38]:
 
-#compute cosine similarity value for the given 
-def cosine_sim(tf_idf_matrix):
-    cosine_similarity()
-    
-
-
-# In[44]:
-
-def cosine_computations():
+def cosine_computations(getLabelsDict, set_lk, label):
     userdata = {}
     for i in range(0, len(set_lk)):
         userdata[i] = {}
@@ -293,16 +289,16 @@ def cosine_computations():
     #for each cluster
 
     for key in labels_dict:
-        print "Key: ", key
+        #print "Key: ", key
         #for each user in the cluster
         for user1 in labels_dict[key]:
             likes1, dislikes1  = findEle(user1)
-            print "User1: ", user1
+            #print "User1: ", user1
             #-----------1
             #go through every other user
             if not len(likes1) == 0 and not len(dislikes1) == 0:
                 for user2 in labels_dict[key]:
-                    print "User2", user2
+                    #print "User2", user2
                     #get the likes and dislikes
                     likes2, dislikes2 = findEle(user2)
 
@@ -324,8 +320,8 @@ def cosine_computations():
                                 #cluster -> user1 -> user2 -> tuple of likes/dislikes -> disliked comparison
                                 userdata[key][user1][user2][1].append(cosine_similarity(dislike1, dislike2)) #likes
 
-
-
+    return userdata
+        
                     #tfIDF(likes)
 
                     #print likes
@@ -336,7 +332,7 @@ def cosine_computations():
             #print dislikes
 
 
-# In[55]:
+# In[39]:
 
 def average_list_nan(data):
     average = float(0)
@@ -348,10 +344,10 @@ def average_list_nan(data):
     return average/counter
 
 
-# In[58]:
+# In[40]:
 
-def average_cluster(userdata):
-    averages = [() for _ in range(len(userdata))]
+def average_sim_cluster(userdata):
+    #averages = [() for _ in range(len(userdata))]
     for cluster in userdata:
         averagelikes = float(0)
         averagedislikes = float(0)
@@ -362,8 +358,9 @@ def average_cluster(userdata):
                 averagelikes += average_list_nan(userdata[cluster][user1][user2][0])
                 averagedislikes += average_list_nan(userdata[cluster][user1][user2][1])
                 counter += 1
-        averages.append((averagelikes/counter, averagedislikes/counter))
-        return averages
+        #averages.append((averagelikes/counter, averagedislikes/counter))
+        #return averages
+        return (averagelikes/counter, averagedislikes/counter)
 
 
 # In[ ]:
@@ -371,10 +368,36 @@ def average_cluster(userdata):
 
 
 
-# In[59]:
+# For k-means
 
+# In[41]:
+
+#get the labels dictionary
+labels_dict = getLabelsDict(set_lk, labels_kmeans)
+#pass into cosine similarity computations
+userdata = cosine_computations(labels_dict, set_lk, labels_kmeans)
 # print userdata
-print average_cluster(userdata)
+print average_sim_cluster(userdata)
+
+
+# In[ ]:
+
+#get the labels dictionary
+labels_dict = getLabelsDict(set_ls, spectral_labels)
+#pass into cosine similarity computations
+userdata = cosine_computations(labels_dict, set_ls,spectral_labels )
+# print userdata
+print average_sim_cluster(userdata)
+
+
+# In[ ]:
+
+#get the labels dictionary
+labels_dict = getLabelsDict(set_lh, h_labels)
+#pass into cosine similarity computations
+userdata = cosine_computations(labels_dict, set_lh, h_labels)
+# print userdata
+print average_sim_cluster(userdata)
 
 
 # In[ ]:
