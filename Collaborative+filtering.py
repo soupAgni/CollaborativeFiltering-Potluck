@@ -215,7 +215,7 @@ def getLabelsDict(set_labels, label_vals):
     
 
 
-# In[15]:
+# In[28]:
 
 colNames =  list(newdf.columns.values)
 #print colNames
@@ -225,16 +225,17 @@ def findEle(index):
     toRet = []
     likes = []
     dislikes = []
+    counter = int(0)
     for col in colNames:
         if not np.isnan(float(newdf.loc[[index]][col])):
             #print np.array(newdf.loc[[index]][col].astype(list))[1]
             for i in np.array(newdf.loc[[index]][col].astype(list)):
                 #print type(i)
                 if i == "1":
-                    likes.append(col)
+                    likes.append(counter)
                 else:
-                    dislikes.append(col)
-            
+                    dislikes.append(counter)
+        counter += 1
             #toRet.append(col)
     #print "likes: ", likes
     #print "dislikes: ", dislikes
@@ -244,14 +245,14 @@ def findEle(index):
 
 # TF-IDF
 
-# In[23]:
+# In[29]:
 
 #compute tf-idf for the given array
 #in Scikit-Learn
 def tfIDF(colNames):
     
     names_to_vec = {}
-    sklearn_tfidf = TfidfVectorizer(stop_words = 'english')#(stop_words = 'english')
+    sklearn_tfidf = TfidfVectorizer(stop_words = 'english')
     vec_representation = sklearn_tfidf.fit(colNames)
     feature_names = sklearn_tfidf.get_feature_names()
     #print vec_representation
@@ -275,8 +276,7 @@ def tfIDF(colNames):
     #print zerosLists
     return zerosLists
 
-
-tfIDF(colNames)
+print len(tfIDF(colNames))
 
 
 # recipeDict = {}
@@ -319,10 +319,11 @@ tfIDF(colNames)
 
 # Cosine similarity
 
-# In[17]:
+# In[32]:
 
 def cosine_computations(getLabelsDict, set_lk, label):
     userdata = {}
+    tfidf_vecs = tfIDF(colNames)
     for i in range(0, len(set_lk)):
         userdata[i] = {}
         for j in range(0, len(label)):
@@ -371,22 +372,22 @@ def cosine_computations(getLabelsDict, set_lk, label):
                         
                         #comparison of recipes
                         #for each recipe in first user's 
-#                         for like1 in tfIDF(likes1 + likes2)[0:len(likes1)]:
+                        for like1 in likes1:
 #                             #for each recipe in second user's
-#                             for like2 in tfIDF(likes2 + likes1)[0:len(likes2)]:
+                             for like2 in likes2:
                                 #get the liked similarity and place in array
                                 #cluster -> user1 -> user2 -> tuple of likes/dislikes -> liked comparison
                                 #print "like1: ", np.array(like1), " like2: ", np.array(like2)
                                 #userdata[key][user1][user2][0].append(cosine_similarity(like1, like2)) #likes
-                        userdata[key][user1][user2][0].append(spatial.distance.cosine(tfIDF(likes1), tfIDF(likes2)))
+                                userdata[key][user1][user2][0].append(spatial.distance.cosine(tfidf_vecs[like1], tfidf_vecs[like2]))
 
-#                         for dislike1 in tfIDF(dislikes1 + dislikes2)[0:len(dislikes1)]:
-#                             #for each recipe in second user's
-#                             for dislike2 in tfIDF(dislikes2 + dislikes1)[0:len(dislikes2)]:
+                        for dislike1 in dislikes1:
+#                           #for each recipe in second user's
+                             for dislike2 in dislikes2:
 #                                 #get the liked similarity and place in array
 #                                 #cluster -> user1 -> user2 -> tuple of likes/dislikes -> disliked comparison
 #                                 userdata[key][user1][user2][1].append(cosine_similarity(dislike1, dislike2)) #likes
-                        userdata[key][user1][user2][1].append(spatial.distance.cosine(tfIDF(dislikes1), tfIDF(dislikes2))) #likes
+                                userdata[key][user1][user2][1].append(spatial.distance.cosine(tfidf_vecs[dislike1], tfidf_vecs[dislike2])) #likes
 
                     else:
                         user_ignored += 1
@@ -411,7 +412,7 @@ def cosine_computations(getLabelsDict, set_lk, label):
             #print dislikes
 
 
-# In[18]:
+# In[33]:
 
 def average_list_nan(data):
     average = float(0)
@@ -423,7 +424,7 @@ def average_list_nan(data):
     return average/counter
 
 
-# In[19]:
+# In[34]:
 
 def average_sim_cluster(userdata):
     averages = []#[() for _ in range(len(userdata))]
@@ -444,7 +445,7 @@ def average_sim_cluster(userdata):
 
 # For k-means
 
-# In[20]:
+# In[ ]:
 
 #get the labels dictionary
 labels_dict = getLabelsDict(set_lk, labels_kmeans)
@@ -472,4 +473,9 @@ labels_dict = getLabelsDict(set_lh, h_labels)
 userdata = cosine_computations(labels_dict, set_lh, h_labels)
 # print userdata
 print average_sim_cluster(userdata)
+
+
+# In[ ]:
+
+
 
