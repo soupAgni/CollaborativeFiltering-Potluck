@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[14]:
+# In[1]:
 
 from __future__ import division
 import pandas as pd
@@ -17,19 +17,21 @@ import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d.axes3d as p3
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import time
+from scipy import spatial
 
 
-# In[15]:
+# In[2]:
 
-df = pd.read_csv('formatted_data_updated.csv')
-
+#df = pd.read_csv('formatted_data_updated.csv')
+df = pd.read_csv('formatted_data_ing.csv')
 df = df.replace('?', np.nan)
 #print df
 newdf = df.drop('UserID', axis = 1)
 newdf
 
 
-# In[16]:
+# In[3]:
 
 training_set = newdf[0:31]
 
@@ -38,7 +40,7 @@ test_set = newdf[31:37]
 
 # Adding all of the ratings corresponding to each recipe in a list of lists to make computation easier.
 
-# In[17]:
+# In[4]:
 
 def makeArrays(dataframe): 
     recipeRatings = []
@@ -70,7 +72,7 @@ def makeArrays(dataframe):
 #     #returns a numpy array
 #     return np.array(array)
 
-# In[18]:
+# In[5]:
 
 #compute the averages of the row
 def averages(row):
@@ -87,7 +89,7 @@ def averages(row):
     return (avg/counter)
 
 
-# In[19]:
+# In[6]:
 
 #initlize list of lists for spectral
 training_data = []
@@ -120,18 +122,18 @@ training_data = np.array(training_data)
 # from sklearn.decomposition import PCA
 # reduced_data = PCA(n_components=2).fit_transform(training_data)
 
-# In[20]:
+# In[7]:
 
 #training_data = averages(makeArrays(training_set.T))
 #print training_set.shape
-kmeans = KMeans(n_clusters=4, random_state=0).fit(training_data)
+kmeans = KMeans(n_clusters=6, random_state=0).fit(training_data)
 
 
-# In[21]:
+# In[8]:
 
 labels_kmeans = kmeans.labels_
 set_lk = set(labels_kmeans)
-print set_lk
+print labels_kmeans
 centroids = kmeans.cluster_centers_
 plt.scatter(centroids[:, 0], centroids[:, 1],
             marker='x', s=169, linewidths=3,
@@ -146,7 +148,7 @@ plt.show()
 
 # # Spectral clustering
 
-# In[22]:
+# In[9]:
 
 spectral = SpectralClustering()
 spectral.fit(training_data)
@@ -157,27 +159,27 @@ set_ls = set(spectral_labels)
 
 # # Hierarchial/Agglomerative Clustering
 
-# In[23]:
+# In[10]:
 
 # Define the structure A of the data. Here a 10 nearest neighbors
 from sklearn.neighbors import kneighbors_graph
 connectivity = kneighbors_graph(training_data, n_neighbors=10, include_self=False)
 
 
-# In[24]:
+# In[11]:
 
 ward = AgglomerativeClustering(n_clusters=8, connectivity=connectivity,
                                linkage='ward').fit(training_data)
 
 
-# In[27]:
+# In[12]:
 
 h_labels = ward.labels_
 print h_labels
 set_lh = set(h_labels)
 
 
-# In[30]:
+# In[13]:
 
 # Plot result
 fig = plt.figure()
@@ -191,7 +193,7 @@ for l in np.unique(h_labels):
 plt.show()
 
 
-# In[31]:
+# In[14]:
 
 #testing
 #
@@ -213,7 +215,7 @@ def getLabelsDict(set_labels, label_vals):
     
 
 
-# In[32]:
+# In[15]:
 
 colNames =  list(newdf.columns.values)
 #print colNames
@@ -242,20 +244,82 @@ def findEle(index):
 
 # TF-IDF
 
-# In[33]:
+# In[23]:
 
 #compute tf-idf for the given array
 #in Scikit-Learn
-def tfIDF(array):
-    sklearn_tfidf = TfidfVectorizer()#(stop_words = 'english')
-    vec_representation = sklearn_tfidf.fit_transform(array)
+def tfIDF(colNames):
+    
+    names_to_vec = {}
+    sklearn_tfidf = TfidfVectorizer(stop_words = 'english')#(stop_words = 'english')
+    vec_representation = sklearn_tfidf.fit(colNames)
+    feature_names = sklearn_tfidf.get_feature_names()
     #print vec_representation
-    return vec_representation
+    idx = 0
+    for names in feature_names:
+        
+        names_to_vec[names] = (sklearn_tfidf.idf_[idx], idx)
+        idx = idx +1
+    
+    zerosLists = [[0] * len(feature_names)] * len(colNames)
+    
+    i = 0
+    for rec in colNames:
+       
+        for word in rec.strip().split(' '):
+            if word in names_to_vec:
+                zerosLists[i][names_to_vec[word][1]] = names_to_vec[word][0]
+                
+        i = i + 1
+     
+    #print zerosLists
+    return zerosLists
 
+
+tfIDF(colNames)
+
+
+# recipeDict = {}
+# 
+# for rec in colNames:
+#     #rec = set(rec)
+#     for word in rec.strip().split(' '):
+#         
+#         if (recipeDict.has_key(word)):
+#             recipeDict[word] += 1
+#         else:
+#             recipeDict[word] = 1
+
+# def tfIDF():
+#     total = len(colNames)
+#     tf = [{}] * len(colNames)
+#     #zerosOnEveryRecipe = [[]] * total
+#     count = 0
+#     for rec in colNames:
+#         #print rec
+#         tf[count] = {}
+# 
+#         #zerosOnEveryRecipe[count].append(0)
+#         # get term frequency
+#         for word in rec.strip().split(' '):
+#             
+#             if (tf[count].has_key(word)):
+#                 tf[count][word] += 1
+#             else:
+#                 tf[count][word] = 1
+# 
+#         # scale term frequency by idf
+#         for word in tf[count]:
+#             tf[count][word] = float(tf[count][word]*total/recipeDict[word])
+#         count += 1
+#         print tf
+#         return tf
+#    
+# tfIDF()
 
 # Cosine similarity
 
-# In[38]:
+# In[17]:
 
 def cosine_computations(getLabelsDict, set_lk, label):
     userdata = {}
@@ -266,7 +330,7 @@ def cosine_computations(getLabelsDict, set_lk, label):
             for k in range(0, len(label)):
                 userdata[i][j][k] = ([],[])
 
-
+    user_ignored = int(0)
 
     #1-------
     #         for like in likes:
@@ -289,6 +353,7 @@ def cosine_computations(getLabelsDict, set_lk, label):
     #for each cluster
 
     for key in labels_dict:
+        print "key: " , key   
         #print "Key: ", key
         #for each user in the cluster
         for user1 in labels_dict[key]:
@@ -303,23 +368,37 @@ def cosine_computations(getLabelsDict, set_lk, label):
                     likes2, dislikes2 = findEle(user2)
 
                     if not len(likes2) == 0 and not len(dislikes2) == 0:
+                        
                         #comparison of recipes
                         #for each recipe in first user's 
-                        for like1 in tfIDF(likes1 + likes2)[0:len(likes1)]:
-                            #for each recipe in second user's
-                            for like2 in tfIDF(likes2 + likes1)[0:len(likes2)]:
+#                         for like1 in tfIDF(likes1 + likes2)[0:len(likes1)]:
+#                             #for each recipe in second user's
+#                             for like2 in tfIDF(likes2 + likes1)[0:len(likes2)]:
                                 #get the liked similarity and place in array
                                 #cluster -> user1 -> user2 -> tuple of likes/dislikes -> liked comparison
-                                userdata[key][user1][user2][0].append(cosine_similarity(like1, like2)) #likes
+                                #print "like1: ", np.array(like1), " like2: ", np.array(like2)
+                                #userdata[key][user1][user2][0].append(cosine_similarity(like1, like2)) #likes
+                        userdata[key][user1][user2][0].append(spatial.distance.cosine(tfIDF(likes1), tfIDF(likes2)))
 
+#                         for dislike1 in tfIDF(dislikes1 + dislikes2)[0:len(dislikes1)]:
+#                             #for each recipe in second user's
+#                             for dislike2 in tfIDF(dislikes2 + dislikes1)[0:len(dislikes2)]:
+#                                 #get the liked similarity and place in array
+#                                 #cluster -> user1 -> user2 -> tuple of likes/dislikes -> disliked comparison
+#                                 userdata[key][user1][user2][1].append(cosine_similarity(dislike1, dislike2)) #likes
+                        userdata[key][user1][user2][1].append(spatial.distance.cosine(tfIDF(dislikes1), tfIDF(dislikes2))) #likes
 
-                        for dislike1 in tfIDF(dislikes1 + dislikes2)[0:len(dislikes1)]:
-                            #for each recipe in second user's
-                            for dislike2 in tfIDF(dislikes2 + dislikes1)[0:len(dislikes2)]:
-                                #get the liked similarity and place in array
-                                #cluster -> user1 -> user2 -> tuple of likes/dislikes -> disliked comparison
-                                userdata[key][user1][user2][1].append(cosine_similarity(dislike1, dislike2)) #likes
-
+                    else:
+                        user_ignored += 1
+                    
+                    #print "likes: ", userdata[key][user1][user2][0]
+                    #print "dislikes: ", userdata[key][user1][user2][0]
+            else:
+                user_ignored += 1
+            
+            #print user_ignored
+   
+        
     return userdata
         
                     #tfIDF(likes)
@@ -332,7 +411,7 @@ def cosine_computations(getLabelsDict, set_lk, label):
             #print dislikes
 
 
-# In[39]:
+# In[18]:
 
 def average_list_nan(data):
     average = float(0)
@@ -344,10 +423,10 @@ def average_list_nan(data):
     return average/counter
 
 
-# In[40]:
+# In[19]:
 
 def average_sim_cluster(userdata):
-    #averages = [() for _ in range(len(userdata))]
+    averages = []#[() for _ in range(len(userdata))]
     for cluster in userdata:
         averagelikes = float(0)
         averagedislikes = float(0)
@@ -358,19 +437,14 @@ def average_sim_cluster(userdata):
                 averagelikes += average_list_nan(userdata[cluster][user1][user2][0])
                 averagedislikes += average_list_nan(userdata[cluster][user1][user2][1])
                 counter += 1
-        #averages.append((averagelikes/counter, averagedislikes/counter))
-        #return averages
-        return (averagelikes/counter, averagedislikes/counter)
-
-
-# In[ ]:
-
-
+        averages.append((averagelikes/counter, averagedislikes/counter))
+    return averages
+        #return (averagelikes/counter, averagedislikes/counter)
 
 
 # For k-means
 
-# In[41]:
+# In[20]:
 
 #get the labels dictionary
 labels_dict = getLabelsDict(set_lk, labels_kmeans)
@@ -398,9 +472,4 @@ labels_dict = getLabelsDict(set_lh, h_labels)
 userdata = cosine_computations(labels_dict, set_lh, h_labels)
 # print userdata
 print average_sim_cluster(userdata)
-
-
-# In[ ]:
-
-
 
