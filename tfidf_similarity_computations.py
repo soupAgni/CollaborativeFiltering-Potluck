@@ -221,7 +221,7 @@ def average_sim_cluster(userdata):
                 averagelikes += average_list_nan(userdata[cluster][user1][user2][0])
                 averagedislikes += average_list_nan(userdata[cluster][user1][user2][1])
                 counter += 1
-        averages.append((averagelikes/counter, averagedislikes/counter))
+        averages.append((float(1) - averagelikes/counter, float(1) - averagedislikes/counter))
     return averages
 
 
